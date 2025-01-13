@@ -507,7 +507,7 @@ class UpSet:
         ax.set_ylabel(title)
         return all_rects
 
-    def _plot_stacked_bars(self, ax, by, sum_over, colors, title):
+    def _plot_stacked_bars(self, ax, by, sum_over, colors, title, legend_title=None):
         df = self._df.set_index("_bin").set_index(by, append=True, drop=False)
         gb = df.groupby(level=list(range(df.index.nlevels)), sort=True)
         if sum_over is None and "_value" in df.columns:
@@ -527,7 +527,13 @@ class UpSet:
                     % data.columns[pd.isna(colors)].tolist()
                 )
 
-        self._plot_bars(ax, data=data, colors=colors, title=title, use_labels=True)
+        # Only pass the relevant arguments to _plot_bars
+        self._plot_bars(ax,
+                        data=data,
+                        colors=colors,
+                        title=title,
+                        use_labels=True,
+                        )
 
         handles, labels = ax.get_legend_handles_labels()
         if self._horizontal:
@@ -535,9 +541,14 @@ class UpSet:
             # Convert reversed iterators to lists before passing to legend
             handles = list(reversed(handles))
             labels = list(reversed(labels))
-        ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc='upper left')
-
-    def add_stacked_bars(self, by, sum_over=None, colors=None, elements=3, title=None):
+        ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc='upper left', title=legend_title)
+        
+    def add_stacked_bars(self, by,
+                         sum_over=None,
+                         colors=None,
+                         elements=3,
+                         title=None,
+                         legend_title=None):
         """Add a stacked bar chart over subsets when :func:`plot` is called.
 
         Used to plot categorical variable distributions within each subset.
@@ -589,6 +600,7 @@ class UpSet:
                 "title": title,
                 "id": "extra%d" % len(self._subset_plots),
                 "elements": elements,
+                "legend_title": legend_title,
             }
         )
 
@@ -861,7 +873,11 @@ class UpSet:
     def plot_intersections(self, ax):
         """Plot bars indicating intersection size"""
         rects = self._plot_bars(
-            ax, self.intersections, title="Intersection size", colors=self._facecolor
+            ax,
+            self.intersections,
+            title="Intersection size",
+            colors=self._facecolor,
+            legend_title=None
         )
         for style, rect in zip(self.subset_styles, rects):
             style = style.copy()
